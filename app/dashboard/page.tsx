@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useUser, UserButton } from '@clerk/nextjs';
+import { useUser } from '@clerk/nextjs';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSocket } from '@/hooks/useSocket';
 import { useCollabStore } from '@/lib/store/collabStore';
+import { UserMenu } from '@/components/UserMenu';
 
 export default function DashboardPage() {
   const [messageInput, setMessageInput] = useState('');
@@ -94,13 +95,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-medium">{user?.firstName || 'User'}</p>
-                <p className="text-xs text-gray-400">{user?.primaryEmailAddress?.emailAddress}</p>
-              </div>
-              <UserButton afterSignOutUrl="/" />
-            </div>
+            <UserMenu />
           </div>
         </div>
       </nav>

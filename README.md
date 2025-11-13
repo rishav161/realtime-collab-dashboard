@@ -131,6 +131,8 @@ Open multiple browser tabs to see the magic! ✨
 ### Pages
 - **`/`** - Home page with demo counter and chat
 - **`/dashboard`** - Full collaborative dashboard with users panel and live chat
+- **`/sign-in`** - Beautiful custom sign-in page with Clerk authentication
+- **`/sign-up`** - Stunning sign-up page with animated background
 
 ## Deployment
 

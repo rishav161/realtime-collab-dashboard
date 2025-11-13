@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { UserButton } from '@clerk/nextjs';
 import { motion } from 'framer-motion';
 import { useSocket } from '@/hooks/useSocket';
 import { useStore } from '@/lib/store';
 import { useCollabStore } from '@/lib/store/collabStore';
 import { ActivityIndicator } from '@/components/ActivityIndicator';
 import { DashboardPreview } from '@/components/DashboardPreview';
+import { UserMenu } from '@/components/UserMenu';
 
 export default function Home() {
   const [messageInput, setMessageInput] = useState('');
@@ -53,7 +53,7 @@ export default function Home() {
           </h1>
           <ActivityIndicator />
         </div>
-        <UserButton afterSignOutUrl="/" />
+        <UserMenu />
       </nav>
 
       {/* Main Content */}
