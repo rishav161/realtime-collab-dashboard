@@ -56,16 +56,23 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ```
 ├── app/
-│   ├── api/          # API routes
-│   ├── sign-in/      # Clerk sign-in page
-│   ├── sign-up/      # Clerk sign-up page
-│   └── page.tsx      # Home page
+│   ├── api/users/          # User API routes
+│   ├── sign-in/            # Clerk sign-in page
+│   ├── sign-up/            # Clerk sign-up page
+│   └── page.tsx            # Dashboard with real-time features
+├── components/
+│   └── ActivityIndicator.tsx  # Shows active users
+├── hooks/
+│   └── useSocket.ts        # Custom Socket.IO hook
 ├── lib/
-│   ├── prisma.ts     # Prisma client
-│   └── store.ts      # Zustand store
+│   ├── store/
+│   │   └── collabStore.ts  # Collaboration state (users, messages)
+│   ├── prisma.ts           # Prisma client
+│   └── store.ts            # App state (counter, etc.)
 ├── prisma/
-│   └── schema.prisma # Database schema
-└── middleware.ts     # Clerk auth middleware
+│   └── schema.prisma       # Database schema
+├── server.js               # Custom Node.js server with Socket.IO
+└── middleware.ts           # Clerk auth middleware
 ```
 
 ## Features
@@ -74,9 +81,56 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - ✅ PostgreSQL database with Prisma ORM
 - ✅ State management with Zustand
 - ✅ Animations with Framer Motion
-- ✅ Real-time updates with Socket.IO
+- ✅ Real-time updates with Socket.IO (custom server)
 - ✅ TypeScript for type safety
 - ✅ Tailwind CSS for styling
+
+## Real-Time Collaboration Engine
+
+Built with a lightweight Socket.IO + Zustand architecture for instant synchronization:
+
+### Features
+- **Collaborative Dashboard** (`/dashboard`) - Full-featured real-time workspace
+  - Active users panel with online indicators
+  - Real-time chat with message history
+  - Beautiful dark theme with smooth animations
+  - Responsive design for all screen sizes
+- **Demo Page** (`/`) - Simple counter and chat examples
+- **Activity Indicator** - Visual display of online collaborators with avatars
+- **Connection Status** - Live indicator showing Socket.IO connection state
+
+### Architecture
+- **Custom Hook**: `hooks/useSocket.ts` handles all Socket.IO logic
+- **Collab Store**: `lib/store/collabStore.ts` manages users & messages
+- **App Store**: `lib/store.ts` for non-collaborative state
+- **Server Events**: `user_joined`, `user_left`, `new_message`, `data_sync`
+- **Clean Structure**: Organized hooks and stores, minimal complexity
+
+### How It Works
+```
+Client A                    Server (server.js)              Client B
+   │                              │                            │
+   ├─ useSocket() ───────────────>│                            │
+   │  (connects)                   │                            │
+   │                              │<──────────── useSocket() ──┤
+   │                              │              (connects)     │
+   │                              │                            │
+   ├─ user_joined ───────────────>│                            │
+   │                              ├─ active_users ────────────>│
+   │                              │                            │
+   ├─ data_sync (count: 5) ──────>│                            │
+   │                              ├─ data_sync ───────────────>│
+   │                              │  (broadcasts)              │
+   │                              │                            │
+   │  Zustand Store Updates       │       Zustand Store Updates│
+   │  ✓ count = 5                 │       ✓ count = 5         │
+```
+
+Open multiple browser tabs to see the magic! ✨
+
+### Pages
+- **`/`** - Home page with demo counter and chat
+- **`/dashboard`** - Full collaborative dashboard with users panel and live chat
 
 ## Deployment
 
