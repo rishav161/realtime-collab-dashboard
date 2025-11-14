@@ -1,26 +1,19 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 
 export default function SSOCallback() {
-  const { handleRedirectCallback } = useClerk();
   const router = useRouter();
 
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        await handleRedirectCallback();
+        // Sync user to database after OAuth
+        await fetch('/api/users/sync', { method: 'POST' });
+        console.log('✅ User synced to database');
         
-        // Sync user to database
-        try {
-          await fetch('/api/users/sync', { method: 'POST' });
-          console.log('✅ User synced to database');
-        } catch (syncError) {
-          console.error('❌ Failed to sync user:', syncError);
-        }
-        
+        // Redirect to dashboard
         router.push('/dashboard');
       } catch (error) {
         console.error('SSO callback error:', error);
@@ -28,8 +21,10 @@ export default function SSOCallback() {
       }
     };
 
-    handleCallback();
-  }, [handleRedirectCallback, router]);
+    // Small delay to ensure Clerk session is ready
+    const timer = setTimeout(handleCallback, 1000);
+    return () => clearTimeout(timer);
+  }, [router]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-indigo-950 flex items-center justify-center">
