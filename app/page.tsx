@@ -8,6 +8,7 @@ import { useCollabStore } from '@/lib/store/collabStore';
 import { ActivityIndicator } from '@/components/ActivityIndicator';
 import { DashboardPreview } from '@/components/DashboardPreview';
 import { UserMenu } from '@/components/UserMenu';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export default function Home() {
   const [messageInput, setMessageInput] = useState('');
@@ -53,7 +54,10 @@ export default function Home() {
           </h1>
           <ActivityIndicator />
         </div>
-        <UserMenu />
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+          <UserMenu />
+        </div>
       </nav>
 
       {/* Main Content */}

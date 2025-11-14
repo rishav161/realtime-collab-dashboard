@@ -41,8 +41,13 @@ NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
 npx prisma generate
 
 # Run migrations
-npx prisma migrate dev --name init
+npx prisma migrate dev
 ```
+
+The database will automatically sync user data from Clerk on:
+- User sign-up (after email verification)
+- User sign-in
+- Dashboard page load (fallback)
 
 ### 4. Run Development Server
 

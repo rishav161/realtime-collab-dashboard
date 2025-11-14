@@ -30,7 +30,9 @@ export async function POST(request: Request) {
       data: {
         clerkId: body.clerkId,
         email: body.email,
-        name: body.name,
+        firstName: body.firstName,
+        lastName: body.lastName,
+        imageUrl: body.imageUrl,
       },
     });
 
