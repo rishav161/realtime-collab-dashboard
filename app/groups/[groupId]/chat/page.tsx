@@ -14,7 +14,7 @@ export default function GroupChatPage({ params }: { params: Promise<{ groupId: s
   const [input, setInput] = useState('');
   const [group, setGroup] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const {
     groupMessages,
