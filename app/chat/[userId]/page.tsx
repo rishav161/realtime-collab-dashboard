@@ -19,7 +19,7 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
   const [otherUser, setOtherUser] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const {
     messages,
