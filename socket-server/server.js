@@ -3,8 +3,10 @@ const { Server } = require('socket.io');
 
 const PORT = process.env.PORT || 3002;
 
-// Store active users
+// Store active users (legacy)
 const activeUsers = new Map();
+// Store online users for chat (userId -> socketId)
+const onlineUsers = new Map();
 
 // Create HTTP server
 const httpServer = createServer((req, res) => {
@@ -14,6 +16,7 @@ const httpServer = createServer((req, res) => {
     res.end(JSON.stringify({ 
       status: 'ok', 
       users: activeUsers.size,
+      onlineUsers: onlineUsers.size,
       timestamp: new Date().toISOString()
     }));
     return;
@@ -36,6 +39,8 @@ const io = new Server(httpServer, {
 io.on('connection', (socket) => {
   console.log('🔌 Client connected:', socket.id);
 
+  // ===== LEGACY EVENTS (for dashboard/home page) =====
+  
   // User joined
   socket.on('user_joined', (user) => {
     activeUsers.set(socket.id, user);
@@ -62,8 +67,74 @@ io.on('connection', (socket) => {
     io.emit('new_message', message);
   });
 
-  // Disconnect
+  // ===== NEW CHAT SYSTEM EVENTS =====
+
+  // User authentication for chat
+  socket.on('authenticate', (userId) => {
+    onlineUsers.set(userId, socket.id);
+    socket.data.userId = userId;
+    io.emit('user:online', userId);
+    console.log(`✅ User ${userId} authenticated for chat`);
+  });
+
+  // One-to-One Chat Events
+  socket.on('private:join', ({ userId, otherUserId }) => {
+    const roomName = [userId, otherUserId].sort().join('-');
+    socket.join(`dm-${roomName}`);
+    console.log(`💬 User ${userId} joined DM room: dm-${roomName}`);
+  });
+
+  socket.on('private:message', (data) => {
+    const roomName = [data.senderId, data.receiverId].sort().join('-');
+    io.to(`dm-${roomName}`).emit('private:message', data);
+    console.log(`📨 Private message from ${data.senderId} to ${data.receiverId}`);
+  });
+
+  socket.on('private:typing', ({ userId, otherUserId, isTyping }) => {
+    const roomName = [userId, otherUserId].sort().join('-');
+    socket.to(`dm-${roomName}`).emit('private:typing', { userId, isTyping });
+  });
+
+  // Group Chat Events
+  socket.on('group:join', ({ groupId, userId }) => {
+    socket.join(`group-${groupId}`);
+    socket.to(`group-${groupId}`).emit('group:user_joined', { 
+      userId, 
+      timestamp: new Date().toISOString() 
+    });
+    console.log(`👥 User ${userId} joined group: group-${groupId}`);
+  });
+
+  socket.on('group:leave', ({ groupId, userId }) => {
+    socket.leave(`group-${groupId}`);
+    socket.to(`group-${groupId}`).emit('group:user_left', { 
+      userId, 
+      timestamp: new Date().toISOString() 
+    });
+    console.log(`👋 User ${userId} left group: group-${groupId}`);
+  });
+
+  socket.on('group:message', (data) => {
+    io.to(`group-${data.groupId}`).emit('group:message', data);
+    console.log(`📨 Group message in ${data.groupId} from ${data.senderId}`);
+  });
+
+  socket.on('group:typing', ({ groupId, userId, isTyping }) => {
+    socket.to(`group-${groupId}`).emit('group:typing', { userId, isTyping });
+  });
+
+  // ===== DISCONNECT =====
+  
   socket.on('disconnect', () => {
+    // Handle chat user disconnect
+    const userId = socket.data.userId;
+    if (userId) {
+      onlineUsers.delete(userId);
+      io.emit('user:offline', userId);
+      console.log(`❌ Chat user ${userId} disconnected`);
+    }
+
+    // Handle legacy user disconnect
     const user = activeUsers.get(socket.id);
     if (user) {
       console.log('👋 User left:', user.name);
