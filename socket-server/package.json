@@ -1,0 +1,16 @@
+{
+  "name": "socket-server",
+  "version": "1.0.0",
+  "description": "Standalone Socket.IO server for real-time features",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "socket.io": "^4.8.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

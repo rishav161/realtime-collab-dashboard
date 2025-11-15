@@ -27,10 +27,17 @@ export function useSocket() {
   useEffect(() => {
     if (!mounted || !user) return;
 
-    // Initialize socket connection
-    socketRef.current = io({
-      path: '/socket.io',
+    // Get Socket.IO server URL (external server or local)
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3002';
+    
+    console.log('🔌 Connecting to Socket.IO server:', socketUrl);
+
+    // Initialize socket connection to external server
+    socketRef.current = io(socketUrl, {
       transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 5,
     });
 
     const socket = socketRef.current;
@@ -105,7 +112,7 @@ export function useSocket() {
     if (!socketRef.current?.connected || !user) return;
 
     const message = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: Math.random().toString(36).substring(2, 11),
       senderId: socketRef.current.id,
       senderName: user.firstName || user.username || 'Anonymous',
       content,
