@@ -1,137 +1,168 @@
-'use client';
-
-import { useEffect, useRef, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
-import { useCollabStore } from '@/lib/store/collabStore';
+import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
-
-const AVATAR_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
+import { getSocket, connectSocket, disconnectSocket } from '@/lib/socket/client';
+import { Socket } from 'socket.io-client';
+import { useChatStore } from './useChatStore';
+import { useGroupStore } from './useGroupStore';
+import { useCollabStore } from '@/lib/store/collabStore';
 
 export function useSocket() {
-  const socketRef = useRef<Socket | null>(null);
-  const [mounted, setMounted] = useState(false);
   const { user } = useUser();
-  
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const { setUserOnline, setUserOffline, setTyping } = useChatStore();
   const { 
-    setIsConnected, 
-    addUser, 
-    removeUser, 
-    setUsers,
-    addMessage 
-  } = useCollabStore();
+    setUserOnline: setGroupUserOnline, 
+    setUserOffline: setGroupUserOffline,
+    setTyping: setGroupTyping 
+  } = useGroupStore();
+  const { setIsConnected, addMessage, setUsers, addUser, removeUser } = useCollabStore();
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    if (!user) return;
 
-  useEffect(() => {
-    if (!mounted || !user) return;
+    const socketInstance = getSocket();
+    setSocket(socketInstance);
 
-    // Get Socket.IO server URL (external server or local)
-    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3002';
-    
-    console.log('🔌 Connecting to Socket.IO server:', socketUrl);
+    // Store database user ID
+    let dbUserId: string | null = null;
 
-    // Initialize socket connection to external server
-    socketRef.current = io(socketUrl, {
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionAttempts: 5,
-    });
+    // Fetch database user ID once
+    const fetchDbUserId = async () => {
+      try {
+        const res = await fetch('/api/users/me');
+        const data = await res.json();
+        if (data.user) {
+          dbUserId = data.user.id;
+          console.log('🔐 Got database user ID:', dbUserId);
+        }
+      } catch (error) {
+        console.error('Failed to get user ID:', error);
+      }
+    };
 
-    const socket = socketRef.current;
+    // Fetch user ID immediately
+    fetchDbUserId();
 
     // Connection events
-    socket.on('connect', () => {
-      console.log('✅ Socket connected:', socket.id);
+    socketInstance.on('connect', () => {
+      console.log('✅ Socket connected');
       setIsConnected(true);
-
-      // Emit user_joined event
-      socket.emit('user_joined', {
-        id: socket.id,
-        name: user.firstName || user.username || 'Anonymous',
-        avatar: AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)],
-        online: true,
+      
+      // Emit user_joined for legacy dashboard
+      socketInstance.emit('user_joined', {
+        id: user.id,
+        name: user.firstName || user.emailAddresses[0]?.emailAddress || 'Anonymous',
+        avatar: user.imageUrl || '',
       });
+
+      // Authenticate with database user ID if available
+      if (dbUserId) {
+        console.log('🔐 Authenticating with database user ID:', dbUserId);
+        socketInstance.emit('authenticate', dbUserId);
+      } else {
+        // Retry fetching if not available yet
+        fetchDbUserId().then(() => {
+          if (dbUserId) {
+            socketInstance.emit('authenticate', dbUserId);
+          }
+        });
+      }
     });
 
-    socket.on('disconnect', () => {
+    socketInstance.on('disconnect', () => {
       console.log('❌ Socket disconnected');
       setIsConnected(false);
     });
 
-    // Listen to user_joined event
-    socket.on('user_joined', (newUser: any) => {
-      console.log('👤 User joined:', newUser.name);
-      addUser(newUser);
+    // Legacy events for dashboard/home
+    socketInstance.on('active_users', (users: any[]) => {
+      setUsers(users.map(u => ({ ...u, online: true })));
     });
 
-    // Listen to user_left event
-    socket.on('user_left', (userId: string) => {
-      console.log('👋 User left:', userId);
-      removeUser(userId);
+    socketInstance.on('user_joined', (newUser: any) => {
+      addUser({ ...newUser, online: true });
     });
 
-    // Listen to active_users event (full user list)
-    socket.on('active_users', (users: any[]) => {
-      console.log('📋 Active users updated:', users.length);
-      setUsers(users);
+    socketInstance.on('user_left', (socketId: string) => {
+      removeUser(socketId);
     });
 
-    // Listen to new_message event
-    socket.on('new_message', (message: any) => {
-      console.log('💬 New message:', message.content);
-      addMessage(message);
+    socketInstance.on('new_message', (message: any) => {
+      addMessage({
+        id: message.id,
+        senderId: message.senderId,
+        senderName: message.senderName,
+        content: message.content,
+        timestamp: Date.now(),
+      });
     });
 
-    // Listen to data_sync event (for counter, etc.)
-    socket.on('data_sync', (data: any) => {
-      console.log('🔄 Data synced:', data);
-      // Emit custom event that can be handled by other components
+    socketInstance.on('data_sync', (data: any) => {
       if (data.count !== undefined) {
         window.dispatchEvent(new CustomEvent('counter-sync', { detail: data.count }));
       }
     });
 
-    // Cleanup on unmount
-    return () => {
-      socket.off('connect');
-      socket.off('disconnect');
-      socket.off('user_joined');
-      socket.off('user_left');
-      socket.off('active_users');
-      socket.off('new_message');
-      socket.off('data_sync');
-      socket.disconnect();
-    };
-  }, [mounted, user, setIsConnected, addUser, removeUser, setUsers, addMessage]);
+    // Chat system events
+    socketInstance.on('user:online', (userId: string) => {
+      console.log('👤 User came online:', userId);
+      setUserOnline(userId);
+      setGroupUserOnline(userId);
+    });
 
-  // Helper functions to emit events
-  const sendMessage = (content: string) => {
-    if (!socketRef.current?.connected || !user) return;
+    socketInstance.on('user:offline', (userId: string) => {
+      console.log('👤 User went offline:', userId);
+      setUserOffline(userId);
+      setGroupUserOffline(userId);
+    });
 
-    const message = {
-      id: Math.random().toString(36).substring(2, 11),
-      senderId: socketRef.current.id,
-      senderName: user.firstName || user.username || 'Anonymous',
-      content,
-      timestamp: Date.now(),
-    };
+    socketInstance.on('private:typing', ({ userId, isTyping }: { userId: string; isTyping: boolean }) => {
+      setTyping(userId, isTyping);
+    });
 
-    socketRef.current.emit('new_message', message);
-  };
+    socketInstance.on('group:typing', ({ userId, isTyping }: { userId: string; isTyping: boolean }) => {
+      setGroupTyping(userId, isTyping);
+    });
 
-  const emitCustomEvent = (event: string, data: any) => {
-    if (socketRef.current?.connected) {
-      socketRef.current.emit(event, data);
+    // Connect the socket
+    if (!socketInstance.connected) {
+      socketInstance.connect();
     }
+
+    return () => {
+      socketInstance.off('connect');
+      socketInstance.off('disconnect');
+      socketInstance.off('active_users');
+      socketInstance.off('user_joined');
+      socketInstance.off('user_left');
+      socketInstance.off('new_message');
+      socketInstance.off('data_sync');
+      socketInstance.off('user:online');
+      socketInstance.off('user:offline');
+      socketInstance.off('private:typing');
+      socketInstance.off('group:typing');
+    };
+  }, [user]);
+
+  // Legacy support for old pages (dashboard/home)
+  const sendMessage = (content: string) => {
+    if (!socket || !user) return;
+    
+    const message = {
+      id: Date.now().toString(),
+      content,
+      senderName: user.firstName || user.emailAddresses[0]?.emailAddress || 'Anonymous',
+      senderId: user.id,
+      timestamp: new Date().toISOString(),
+    };
+    
+    socket.emit('new_message', message);
   };
 
-  return {
-    socket: socketRef.current,
-    isConnected: socketRef.current?.connected || false,
-    sendMessage,
-    emitCustomEvent,
+  const emitCustomEvent = (eventName: string, data: any) => {
+    if (!socket) return;
+    socket.emit(eventName, data);
   };
+
+  return { socket, sendMessage, emitCustomEvent };
 }

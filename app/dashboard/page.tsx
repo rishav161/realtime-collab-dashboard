@@ -101,6 +101,14 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex items-center gap-3">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => window.location.href = '/chats'}
+                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-shadow"
+              >
+                💬 Chats
+              </motion.button>
               <ThemeToggle />
               <UserMenu />
             </div>
