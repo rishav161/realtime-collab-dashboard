@@ -15,7 +15,6 @@ interface User {
 
 export default function CreateGroupPage() {
   const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
@@ -65,7 +64,6 @@ export default function CreateGroupPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           name: name.trim(),
-          description: description.trim(),
           memberIds: selectedUsers
         }),
       });
@@ -118,20 +116,6 @@ export default function CreateGroupPage() {
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter group name"
               className="w-full px-4 py-3 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white"
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-              Description (Optional)
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="What's this group about?"
-              rows={3}
-              className="w-full px-4 py-3 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white resize-none"
             />
           </div>
 

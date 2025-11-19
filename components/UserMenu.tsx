@@ -108,6 +108,10 @@ export function UserMenu() {
               </button>
 
               <button
+                onClick={() => {
+                  router.push('/settings');
+                  setIsOpen(false);
+                }}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors text-left"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

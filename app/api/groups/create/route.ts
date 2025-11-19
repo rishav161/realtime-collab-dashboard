@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, description, memberIds = [] } = body;
+    const { name, memberIds = [] } = body;
 
     if (!name || name.trim().length === 0) {
       return NextResponse.json({ error: 'Group name is required' }, { status: 400 });
@@ -35,7 +35,6 @@ export async function POST(request: NextRequest) {
     const group = await prisma.group.create({
       data: {
         name: name.trim(),
-        description: description?.trim() || null,
         adminId: currentUser.id,
         members: {
           create: memberData,
