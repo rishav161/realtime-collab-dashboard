@@ -2,17 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useTheme } from './ThemeProvider';
+import { useTheme } from 'next-themes';
 
 export function ThemeToggle() {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Prevent hydration mismatch
   if (!mounted) {
     return (
       <div className="w-14 h-7 bg-gray-300 dark:bg-gray-600 rounded-full opacity-50 animate-pulse" />
@@ -23,7 +22,7 @@ export function ThemeToggle() {
 
   return (
     <button
-      onClick={toggleTheme}
+      onClick={() => setTheme(isDark ? 'light' : 'dark')}
       className="relative w-14 h-7 bg-gray-300 dark:bg-gray-600 rounded-full p-1 transition-colors
                  hover:bg-gray-400 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
       aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
