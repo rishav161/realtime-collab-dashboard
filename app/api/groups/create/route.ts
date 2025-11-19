@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name } = body;
+    const { name, description, memberIds = [] } = body;
 
     if (!name || name.trim().length === 0) {
       return NextResponse.json({ error: 'Group name is required' }, { status: 400 });
@@ -25,15 +25,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Create group and add creator as member
+    // Create array of members including creator and selected users
+    const memberData = [
+      { userId: currentUser.id }, // Always include creator
+      ...memberIds.filter((id: string) => id !== currentUser.id).map((id: string) => ({ userId: id }))
+    ];
+
+    // Create group and add members
     const group = await prisma.group.create({
       data: {
         name: name.trim(),
+        description: description?.trim() || null,
         adminId: currentUser.id,
         members: {
-          create: {
-            userId: currentUser.id,
-          },
+          create: memberData,
         },
       },
       include: {

@@ -88,7 +88,7 @@ export default function SignUpPage() {
           console.error('Failed to sync user:', syncError);
         }
         
-        router.push('/dashboard');
+        router.push('/chats');
       }
     } catch (err: any) {
       setError(err.errors?.[0]?.message || 'Invalid verification code');
@@ -137,7 +137,7 @@ export default function SignUpPage() {
                   onClick={() => signUp?.authenticateWithRedirect({
                     strategy: 'oauth_google',
                     redirectUrl: '/sso-callback',
-                    redirectUrlComplete: '/dashboard'
+                    redirectUrlComplete: '/chats'
                   })}
                   className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white dark:bg-neutral-900 border-2 border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-medium rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
                 >

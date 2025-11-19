@@ -13,8 +13,8 @@ export default function SSOCallback() {
         await fetch('/api/users/sync', { method: 'POST' });
         console.log('✅ User synced to database');
         
-        // Redirect to dashboard
-        router.push('/dashboard');
+        // Redirect to chats
+        router.push('/chats');
       } catch (error) {
         console.error('SSO callback error:', error);
         router.push('/sign-in');

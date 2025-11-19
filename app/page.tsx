@@ -1,223 +1,189 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 import { motion } from 'framer-motion';
-import { useSocket } from '@/hooks/useSocket';
-import { useStore } from '@/lib/store';
-import { useCollabStore } from '@/lib/store/collabStore';
-import { ActivityIndicator } from '@/components/ActivityIndicator';
-import { DashboardPreview } from '@/components/DashboardPreview';
-import { UserMenu } from '@/components/UserMenu';
-import { ThemeToggle } from '@/components/ThemeToggle';
+import Link from 'next/link';
 
 export default function Home() {
-  const [messageInput, setMessageInput] = useState('');
-  const { sendMessage, emitCustomEvent } = useSocket();
-  const { count, setCount } = useStore();
-  const { messages } = useCollabStore();
-
-  // Listen for counter sync from other clients
-  useEffect(() => {
-    const handleCounterSync = (event: any) => {
-      setCount(event.detail);
-    };
-
-    window.addEventListener('counter-sync', handleCounterSync);
-    return () => window.removeEventListener('counter-sync', handleCounterSync);
-  }, [setCount]);
-
-  const handleIncrement = () => {
-    const newCount = count + 1;
-    setCount(newCount);
-    emitCustomEvent('data_sync', { count: newCount });
-  };
-
-  const handleDecrement = () => {
-    const newCount = count - 1;
-    setCount(newCount);
-    emitCustomEvent('data_sync', { count: newCount });
-  };
-
-  const handleSendMessage = () => {
-    if (!messageInput.trim()) return;
-    sendMessage(messageInput);
-    setMessageInput('');
-  };
+  const router = useRouter();
+  const { isLoaded, isSignedIn } = useUser();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Header */}
-      <nav className="flex justify-between items-center p-4 bg-white dark:bg-gray-800 shadow-md">
-        <div className="flex items-center gap-6">
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
-            Real-Time Dashboard
-          </h1>
-          <ActivityIndicator />
-        </div>
-        <div className="flex items-center gap-3">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => window.location.href = '/chats'}
-            className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-shadow"
-          >
-            💬 Chats
-          </motion.button>
-          <ThemeToggle />
-          <UserMenu />
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
-          
-          {/* Counter Card */}
+    <div className="min-h-screen bg-white dark:bg-neutral-950">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
+        
+        <div className="relative max-w-7xl mx-auto px-6 py-24 sm:py-32">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8"
+            transition={{ duration: 0.6 }}
+            className="text-center"
           >
-            <h2 className="text-2xl font-bold text-center mb-4 text-gray-800 dark:text-white">
-              Shared Counter
-            </h2>
-            <p className="text-center text-gray-600 dark:text-gray-400 mb-6 text-sm">
-              Changes sync across all connected clients
-            </p>
-            
-            <div className="text-center">
-              <motion.div
-                key={count}
-                initial={{ scale: 0.8 }}
-                animate={{ scale: 1 }}
-                className="text-7xl font-bold text-indigo-600 dark:text-indigo-400 mb-8"
-              >
-                {count}
-              </motion.div>
-
-              <div className="flex gap-4 justify-center">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleDecrement}
-                  className="px-8 py-3 bg-red-500 text-white rounded-lg font-semibold 
-                           hover:bg-red-600 transition shadow-md"
-                >
-                  −
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleIncrement}
-                  className="px-8 py-3 bg-green-500 text-white rounded-lg font-semibold 
-                           hover:bg-green-600 transition shadow-md"
-                >
-                  +
-                </motion.button>
+            {/* Logo/Icon */}
+            <div className="flex justify-center mb-8">
+              <div className="w-20 h-20 bg-neutral-900 dark:bg-white rounded-2xl flex items-center justify-center">
+                <svg className="w-10 h-10 text-white dark:text-neutral-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
               </div>
             </div>
-          </motion.div>
 
-          {/* Messages Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8"
-          >
-            <h2 className="text-2xl font-bold text-center mb-4 text-gray-800 dark:text-white">
-              Live Chat
-            </h2>
-            <p className="text-center text-gray-600 dark:text-gray-400 mb-6 text-sm">
-              Messages broadcast to all users
+            {/* Heading */}
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-neutral-900 dark:text-white mb-6 tracking-tight">
+              Real-time collaboration
+              <br />
+              <span className="text-neutral-500 dark:text-neutral-400">made simple</span>
+            </h1>
+
+            {/* Subheading */}
+            <p className="text-xl text-neutral-600 dark:text-neutral-400 mb-12 max-w-2xl mx-auto">
+              Connect with your team instantly. Chat in real-time, collaborate seamlessly, and build together.
             </p>
 
-            {/* Messages List */}
-            <div className="mb-4 h-64 overflow-y-auto bg-gray-50 dark:bg-gray-900 rounded-lg p-4 space-y-2">
-              {messages.length === 0 ? (
-                <p className="text-gray-400 text-center text-sm py-8">
-                  No messages yet. Start the conversation!
-                </p>
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              {isSignedIn ? (
+                <Link
+                  href="/chats"
+                  className="px-8 py-4 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-lg font-semibold text-lg hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors"
+                >
+                  Go to Messages
+                </Link>
               ) : (
-                messages.map((msg) => (
-                  <motion.div
-                    key={msg.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="p-3 bg-white dark:bg-gray-800 rounded-lg shadow-sm"
+                <>
+                  <Link
+                    href="/sign-up"
+                    className="px-8 py-4 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-lg font-semibold text-lg hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors"
                   >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-semibold text-sm text-indigo-600 dark:text-indigo-400">
-                        {msg.senderName}
-                      </span>
-                      <span className="text-xs text-gray-400">
-                        {new Date(msg.timestamp).toLocaleTimeString()}
-                      </span>
-                    </div>
-                    <p className="text-gray-800 dark:text-white text-sm">{msg.content}</p>
-                  </motion.div>
-                ))
+                    Get Started
+                  </Link>
+                  <Link
+                    href="/sign-in"
+                    className="px-8 py-4 border-2 border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white rounded-lg font-semibold text-lg hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors"
+                  >
+                    Sign In
+                  </Link>
+                </>
               )}
             </div>
-
-            {/* Message Input */}
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={messageInput}
-                onChange={(e) => setMessageInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                placeholder="Type a message..."
-                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
-                         bg-white dark:bg-gray-700 text-gray-800 dark:text-white
-                         focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleSendMessage}
-                disabled={!messageInput.trim()}
-                className="px-6 py-2 bg-indigo-500 text-white rounded-lg font-semibold 
-                         hover:bg-indigo-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Send
-              </motion.button>
-            </div>
           </motion.div>
-
         </div>
+      </div>
 
-        {/* Info Card */}
+      {/* Features Section */}
+      <div className="max-w-7xl mx-auto px-6 py-24">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="max-w-6xl mx-auto mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6"
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="text-center mb-16"
         >
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
-                🚀 Real-Time Collaboration Engine
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
-                Open this page in multiple tabs or devices to see real-time synchronization in action. 
-                The counter and messages update instantly across all connected clients using Socket.IO + Zustand.
-              </p>
-            </div>
-            <motion.a
-              href="/dashboard"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="ml-4 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white 
-                       rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all whitespace-nowrap"
-            >
-              Go to Dashboard →
-            </motion.a>
-          </div>
+          <h2 className="text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-white mb-4">
+            Everything you need to collaborate
+          </h2>
+          <p className="text-lg text-neutral-600 dark:text-neutral-400">
+            Powerful features to help your team work together
+          </p>
         </motion.div>
 
-        <DashboardPreview />
-      </main>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {[
+            {
+              icon: (
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+              ),
+              title: 'Real-time Messaging',
+              description: 'Instant messaging with live updates. See messages as they arrive, no refresh needed.'
+            },
+            {
+              icon: (
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              ),
+              title: 'Group Chats',
+              description: 'Create groups, add members, and collaborate with your entire team in one place.'
+            },
+            {
+              icon: (
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              ),
+              title: 'Secure & Private',
+              description: 'Your conversations are secure with enterprise-grade encryption and authentication.'
+            }
+          ].map((feature, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 + index * 0.1 }}
+              className="p-8 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl"
+            >
+              <div className="w-16 h-16 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl flex items-center justify-center mb-6">
+                {feature.icon}
+              </div>
+              <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-3">
+                {feature.title}
+              </h3>
+              <p className="text-neutral-600 dark:text-neutral-400">
+                {feature.description}
+              </p>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* CTA Section */}
+      <div className="bg-neutral-900 dark:bg-white">
+        <div className="max-w-7xl mx-auto px-6 py-24 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+          >
+            <h2 className="text-3xl sm:text-4xl font-bold text-white dark:text-neutral-900 mb-6">
+              Ready to get started?
+            </h2>
+            <p className="text-xl text-neutral-300 dark:text-neutral-600 mb-8 max-w-2xl mx-auto">
+              Join thousands of teams already collaborating in real-time
+            </p>
+            <Link
+              href="/sign-up"
+              className="inline-block px-8 py-4 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white rounded-lg font-semibold text-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            >
+              Create Free Account
+            </Link>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="border-t border-neutral-200 dark:border-neutral-800">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">
+              © 2024 Realtime Collab. All rights reserved.
+            </p>
+            <div className="flex gap-6">
+              <a href="#" className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors">
+                Privacy
+              </a>
+              <a href="#" className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors">
+                Terms
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
